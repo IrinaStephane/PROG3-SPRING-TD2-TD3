@@ -1,15 +1,24 @@
 package school.hei.td2.model;
-import lombok.*;
 
-@Getter
-@Setter
-@EqualsAndHashCode
-@ToString
-@AllArgsConstructor
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Student {
+
+    @JsonProperty("Reference")
     private String reference;
+
+    @JsonProperty("FirstName")
     private String firstName;
+
+    @JsonProperty("LastName")
     private String lastName;
-    private int age;
+
+    @JsonProperty("Age")
+    private Integer age;
 }
