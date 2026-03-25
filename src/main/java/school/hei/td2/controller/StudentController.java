@@ -7,85 +7,71 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import school.hei.td2.exception.BadRequestException;
 import school.hei.td2.model.Student;
 import school.hei.td2.service.StudentService;
+import school.hei.td2.validator.StudentValidator;
 
 @RestController
 public class StudentController {
 
     private final StudentService studentService = new StudentService();
+    private final StudentValidator studentValidator = new StudentValidator();
 
-    // A) GET /welcome
-    @GetMapping("/welcome")
-    public ResponseEntity<String> welcome(@RequestParam(value = "name", required = false) String name) {
-
-        if (name == null || name.isEmpty()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("Paramètre 'name' manquant");
-        }
-
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .contentType(MediaType.TEXT_PLAIN)
-                .body("Welcome " + name);
-    }
-
-    // B) POST /students
+    // POST /students
     @PostMapping("/students")
-    public ResponseEntity<List<Student>> addStudents(@RequestBody List<Student> newStudents) {
+    public ResponseEntity<?> addStudents(@RequestBody List<Student> newStudents) {
 
         try {
+            // validation déplacée dans Validator
+            studentValidator.validate(newStudents);
+
             List<Student> allStudents = studentService.addStudents(newStudents);
 
             return ResponseEntity
-                    .status(HttpStatus.CREATED) // 201
+                    .status(HttpStatus.CREATED)
+                    .contentType(MediaType.APPLICATION_JSON)
                     .body(allStudents);
 
-        } catch (Exception e) {
+        } catch (BadRequestException e) {
             return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR) // 500
-                    .build();
-        }
-    }
-
-    // C) GET /students
-    @GetMapping("/students")
-    public ResponseEntity<?> getAllStudents(@RequestHeader(value = "Accept", required = false) String accept) {
-
-        try {
-            // 1) Header absent → 400
-            if (accept == null) {
-                return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST)
-                        .body("Header 'Accept' manquant");
-            }
-
-            // 2) text/plain → noms
-            if (accept.contains(MediaType.TEXT_PLAIN_VALUE)) {
-                return ResponseEntity
-                        .status(HttpStatus.OK)
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .body(studentService.getAllStudentsNames());
-            }
-
-            // 3) application/json → objets Student
-            if (accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
-                return ResponseEntity
-                        .status(HttpStatus.OK)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(studentService.getStudents());
-            }
-
-            // 4) format non supporté → 501
-            return ResponseEntity
-                    .status(HttpStatus.NOT_IMPLEMENTED)
-                    .body("Format non supporté");
+                    .status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(e.getMessage());
 
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur serveur");
+                    .build();
         }
+    }
+
+    // GET /students
+    @GetMapping("/students")
+    public ResponseEntity<?> getAllStudents(@RequestHeader(value = "Accept", required = false) String accept) {
+
+        if (accept == null) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Header 'Accept' manquant");
+        }
+
+        if (accept.contains(MediaType.TEXT_PLAIN_VALUE)) {
+            return ResponseEntity
+                    .ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(studentService.getAllStudentsNames());
+        }
+
+        if (accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
+            return ResponseEntity
+                    .ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(studentService.getStudents());
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_IMPLEMENTED)
+                .body("Format non supporté");
     }
 }

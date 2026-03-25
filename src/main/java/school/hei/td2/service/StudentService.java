@@ -13,15 +13,15 @@ public class StudentService {
 
     private final List<Student> students = new ArrayList<>();
 
-    public String getAllStudentsNames() {
-        return students.stream()
-                .map(student -> student.getFirstName() + " " + student.getLastName())
-                .reduce((s1, s2) -> s1 + ", " + s2)
-                .orElse("No students found");
-    }
-
     public List<Student> addStudents(List<Student> newStudents) {
         students.addAll(newStudents);
         return students;
+    }
+
+    public String getAllStudentsNames() {
+        return students.stream()
+                .map(s -> s.getFirstName() + " " + s.getLastName())
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("No students found");
     }
 }
